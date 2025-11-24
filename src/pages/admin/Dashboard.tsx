@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { matches, getPendingRegistrations } = useData();
+  const { games, getPendingRegistrations } = useData();
   const { isAdmin, logout } = useAuth();
 
   useEffect(() => {
@@ -15,8 +15,8 @@ export default function Dashboard() {
     }
   }, [isAdmin, navigate]);
 
-  const upcomingMatches = matches.filter(m => m.status === 'upcoming');
-  const completedMatches = matches.filter(m => m.status === 'completed');
+  const upcomingGames = games.filter(g => g.status === 'upcoming');
+  const completedGames = games.filter(g => g.status === 'completed');
   const pendingRegistrations = getPendingRegistrations();
 
   const formatDate = (dateTime: string) => {
@@ -30,8 +30,8 @@ export default function Dashboard() {
     });
   };
 
-  const getTotalPlayers = (match: typeof matches[0]) => {
-    return match.teams.reduce((sum, team) => {
+  const getTotalPlayers = (game: typeof games[0]) => {
+    return game.teams.reduce((sum, team) => {
       return sum + team.players.filter(p => p.status !== 'rejected').length;
     }, 0);
   };
@@ -43,7 +43,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage matches and registrations</p>
+              <p className="text-gray-600 mt-1">Manage games and registrations</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -75,8 +75,8 @@ export default function Dashboard() {
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
             </div>
-            <p className="text-gray-600 text-sm">Total Matches</p>
-            <p className="text-3xl font-bold text-gray-800">{matches.length}</p>
+            <p className="text-gray-600 text-sm">Total Games</p>
+            <p className="text-3xl font-bold text-gray-800">{games.length}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -86,7 +86,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-gray-600 text-sm">Upcoming</p>
-            <p className="text-3xl font-bold text-gray-800">{upcomingMatches.length}</p>
+            <p className="text-3xl font-bold text-gray-800">{upcomingGames.length}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -96,7 +96,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-gray-600 text-sm">Completed</p>
-            <p className="text-3xl font-bold text-gray-800">{completedMatches.length}</p>
+            <p className="text-3xl font-bold text-gray-800">{completedGames.length}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -111,7 +111,7 @@ export default function Dashboard() {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">All Matches</h2>
+          <h2 className="text-2xl font-bold text-gray-800">All Games</h2>
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/admin/verifications')}
@@ -125,7 +125,7 @@ export default function Dashboard() {
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Create Match
+              Create Game
             </button>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function Dashboard() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Match</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Game</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date & Time</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Location</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Players</th>
@@ -143,49 +143,49 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {matches.map(match => (
-                <tr key={match.id} className="hover:bg-gray-50">
+              {games.map(game => (
+                <tr key={game.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <p className="font-semibold text-gray-800">{match.title}</p>
+                    <p className="font-semibold text-gray-800">{game.title}</p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatDate(match.dateTime)}
+                    {formatDate(game.dateTime)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {match.fieldName}
+                    {game.fieldName}
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                      {getTotalPlayers(match)} players
+                      {getTotalPlayers(game)} players
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      match.status === 'upcoming'
+                      game.status === 'upcoming'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-700'
                     }`}>
-                      {match.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                      {game.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => navigate(`/match/${match.id}`)}
+                        onClick={() => navigate(`/match/${game.id}`)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="View"
                       >
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => navigate(`/admin/match/edit/${match.id}`)}
+                        onClick={() => navigate(`/admin/match/edit/${game.id}`)}
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => navigate(`/admin/media/${match.id}`)}
+                        onClick={() => navigate(`/admin/media/${game.id}`)}
                         className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                         title="Manage Gallery"
                       >
@@ -198,9 +198,9 @@ export default function Dashboard() {
             </tbody>
           </table>
 
-          {matches.length === 0 && (
+          {games.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No matches created yet</p>
+              <p className="text-gray-500">No games created yet</p>
             </div>
           )}
         </div>

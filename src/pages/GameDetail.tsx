@@ -5,28 +5,28 @@ import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, DollarSign, Users, ArrowLeft, ExternalLink, CheckCircle, Clock, XCircle, Play } from 'lucide-react';
 import RegistrationModal from '../components/RegistrationModal';
 
-export default function MatchDetail() {
+export default function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getMatch, registerPlayer, generateRoundRobinMatches } = useData();
+  const { getGame, registerPlayer, generateMatches } = useData();
   const { isAdmin } = useAuth();
-  const match = getMatch(id || '');
+  const game = getGame(id || '');
 
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  if (!match) {
+  if (!game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Match not found</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Game not found</h2>
           <button
             onClick={() => navigate('/')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
           >
-            Back to Matches
+            Back to Games
           </button>
         </div>
       </div>
@@ -53,7 +53,7 @@ export default function MatchDetail() {
   };
 
   const handleRegistration = (data: { name: string; contact: string; proofFile: { name: string; type: string; url: string } }) => {
-    const result = registerPlayer(match.id, selectedTeamId, {
+    const result = registerPlayer(game.id, selectedTeamId, {
       name: data.name,
       contact: data.contact,
       proofFile: data.proofFile,
@@ -99,7 +99,7 @@ export default function MatchDetail() {
     }
   };
 
-  const selectedTeam = match.teams.find(t => t.id === selectedTeamId);
+  const selectedTeam = game.teams.find(t => t.id === selectedTeamId);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -109,7 +109,7 @@ export default function MatchDetail() {
           className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to Matches
+          Back to Games
         </button>
 
         {successMessage && (
@@ -128,19 +128,19 @@ export default function MatchDetail() {
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2">{match.title}</h1>
+                <h1 className="text-3xl font-bold text-white mb-2">{game.title}</h1>
                 <div className="flex flex-wrap gap-4 text-blue-100">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    <span>{formatDate(match.dateTime)}</span>
+                    <span>{formatDate(game.dateTime)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-5 h-5" />
-                    <span>{match.fieldName}</span>
+                    <span>{game.fieldName}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5" />
-                    <span>Rp {match.pricePerPlayer.toLocaleString('id-ID')}/player</span>
+                    <span>Rp {game.pricePerPlayer.toLocaleString('id-ID')}/player</span>
                   </div>
                 </div>
               </div>
@@ -149,14 +149,14 @@ export default function MatchDetail() {
 
           <div className="p-8">
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Match Details</h2>
-              <p className="text-gray-600 leading-relaxed">{match.description}</p>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Game Details</h2>
+              <p className="text-gray-600 leading-relaxed">{game.description}</p>
               <div className="mt-4 flex items-start gap-2">
                 <MapPin className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-gray-700 font-medium">{match.address}</p>
+                  <p className="text-gray-700 font-medium">{game.address}</p>
                   <a
-                    href={match.mapsLink}
+                    href={game.mapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mt-1"
@@ -174,9 +174,9 @@ export default function MatchDetail() {
                   <Users className="w-6 h-6 text-blue-600" />
                   <h2 className="text-xl font-bold text-gray-800">Teams</h2>
                 </div>
-                {isAdmin && match.teams.length >= 2 && (
+                {isAdmin && game.teams.length >= 2 && (
                   <button
-                    onClick={() => generateRoundRobinMatches(match.id)}
+                    onClick={() => generateMatches(game.id)}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
                   >
                     <Play className="w-5 h-5" />
@@ -186,9 +186,9 @@ export default function MatchDetail() {
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {match.teams.map(team => {
+                {game.teams.map(team => {
                   const confirmedPlayers = team.players.filter(p => p.status !== 'rejected');
-                  const isFull = confirmedPlayers.length >= match.maxPlayersPerTeam;
+                  const isFull = confirmedPlayers.length >= game.maxPlayersPerTeam;
 
                   return (
                     <div
@@ -200,7 +200,7 @@ export default function MatchDetail() {
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           isFull ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                         }`}>
-                          {confirmedPlayers.length}/{match.maxPlayersPerTeam}
+                          {confirmedPlayers.length}/{game.maxPlayersPerTeam}
                         </span>
                       </div>
 
@@ -235,36 +235,63 @@ export default function MatchDetail() {
               </div>
             </div>
 
-            {match.roundRobinMatches && match.roundRobinMatches.length > 0 && (
+            {game.matches && game.matches.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Round Robin Matches</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Matches</h2>
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200">
                   <div className="space-y-3">
-                    {match.roundRobinMatches.map((rrMatch, idx) => (
-                      <div
-                        key={rrMatch.id}
-                        className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-gray-500 font-medium w-8">{idx + 1}.</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-800">{rrMatch.teamAName}</span>
-                            <span className="text-gray-400">vs</span>
-                            <span className="font-semibold text-gray-800">{rrMatch.teamBName}</span>
+                    {game.matches.map((match, idx) => {
+                      const hasResult = match.scoreA !== undefined && match.scoreB !== undefined;
+                      return (
+                        <div
+                          key={match.id}
+                          className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="text-gray-500 font-medium w-8">{idx + 1}.</span>
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="font-semibold text-gray-800">{match.teamAName}</span>
+                              {hasResult ? (
+                                <span className="text-lg font-bold text-gray-800">
+                                  {match.scoreA} - {match.scoreB}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">vs</span>
+                              )}
+                              <span className="font-semibold text-gray-800">{match.teamBName}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {hasResult && (
+                              <button
+                                onClick={() => navigate(`/game/${game.id}/match/${match.id}`)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                              >
+                                View Result
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={() => navigate(`/admin/game/${game.id}/match/${match.id}/result`)}
+                                className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors"
+                              >
+                                {hasResult ? 'Edit' : 'Add Result'}
+                              </button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
 
-            {match.galleryLinks.length > 0 && (
+            {game.galleryLinks.length > 0 && (
               <div>
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Gallery</h2>
                 <div className="flex flex-wrap gap-3">
-                  {match.galleryLinks.map((link, idx) => (
+                  {game.galleryLinks.map((link, idx) => (
                     <a
                       key={idx}
                       href={link}
@@ -292,3 +319,4 @@ export default function MatchDetail() {
     </div>
   );
 }
+

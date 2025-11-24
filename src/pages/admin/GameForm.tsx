@@ -4,14 +4,14 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, Save } from 'lucide-react';
 
-export default function MatchForm() {
+export default function GameForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addMatch, updateMatch, getMatch } = useData();
+  const { addGame, updateGame, getGame } = useData();
   const { isAdmin } = useAuth();
 
   const isEdit = !!id;
-  const existingMatch = isEdit ? getMatch(id) : null;
+  const existingGame = isEdit ? getGame(id) : null;
 
   const [formData, setFormData] = useState({
     title: '',
@@ -33,26 +33,26 @@ export default function MatchForm() {
   }, [isAdmin, navigate]);
 
   useEffect(() => {
-    if (existingMatch) {
+    if (existingGame) {
       setFormData({
-        title: existingMatch.title,
-        dateTime: existingMatch.dateTime,
-        fieldName: existingMatch.fieldName,
-        address: existingMatch.address,
-        mapsLink: existingMatch.mapsLink,
-        description: existingMatch.description,
-        pricePerPlayer: existingMatch.pricePerPlayer,
-        maxPlayersPerTeam: existingMatch.maxPlayersPerTeam,
-        status: existingMatch.status,
-        teamNames: existingMatch.teams.map(t => t.name),
+        title: existingGame.title,
+        dateTime: existingGame.dateTime,
+        fieldName: existingGame.fieldName,
+        address: existingGame.address,
+        mapsLink: existingGame.mapsLink,
+        description: existingGame.description,
+        pricePerPlayer: existingGame.pricePerPlayer,
+        maxPlayersPerTeam: existingGame.maxPlayersPerTeam,
+        status: existingGame.status,
+        teamNames: existingGame.teams.map(t => t.name),
       });
     }
-  }, [existingMatch]);
+  }, [existingGame]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const matchData = {
+    const gameData = {
       title: formData.title,
       dateTime: formData.dateTime,
       fieldName: formData.fieldName,
@@ -62,18 +62,18 @@ export default function MatchForm() {
       pricePerPlayer: formData.pricePerPlayer,
       maxPlayersPerTeam: formData.maxPlayersPerTeam,
       status: formData.status,
-      galleryLinks: existingMatch?.galleryLinks || [],
+      galleryLinks: existingGame?.galleryLinks || [],
       teams: formData.teamNames.map((name, idx) => ({
-        id: existingMatch?.teams[idx]?.id || `team-${idx + 1}`,
+        id: existingGame?.teams[idx]?.id || `team-${idx + 1}`,
         name,
-        players: existingMatch?.teams[idx]?.players || [],
+        players: existingGame?.teams[idx]?.players || [],
       })),
     };
 
-    if (isEdit && existingMatch) {
-      updateMatch(existingMatch.id, matchData);
+    if (isEdit && existingGame) {
+      updateGame(existingGame.id, gameData);
     } else {
-      addMatch(matchData);
+      addGame(gameData);
     }
 
     navigate('/admin/dashboard');
@@ -98,13 +98,13 @@ export default function MatchForm() {
 
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-8">
-            {isEdit ? 'Edit Match' : 'Create New Match'}
+            {isEdit ? 'Edit Game' : 'Create New Game'}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Match Title *
+                Game Title *
               </label>
               <input
                 type="text"
@@ -182,7 +182,7 @@ export default function MatchForm() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={4}
-                placeholder="Describe the match..."
+                placeholder="Describe the game..."
                 required
               />
             </div>
@@ -219,7 +219,7 @@ export default function MatchForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Match Status *
+                Game Status *
               </label>
               <select
                 value={formData.status}
@@ -264,7 +264,7 @@ export default function MatchForm() {
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
-                {isEdit ? 'Update Match' : 'Create Match'}
+                {isEdit ? 'Update Game' : 'Create Game'}
               </button>
             </div>
           </form>
@@ -273,3 +273,4 @@ export default function MatchForm() {
     </div>
   );
 }
+

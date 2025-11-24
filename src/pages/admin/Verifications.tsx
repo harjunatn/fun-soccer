@@ -64,8 +64,8 @@ export default function Verifications() {
               </div>
             ) : (
               <div className="space-y-6">
-                {pendingRegistrations.map(({ match, player }) => {
-                  const team = match.teams.find(t => t.id === player.teamId);
+                {pendingRegistrations.map(({ game, player }) => {
+                  const team = game.teams.find(t => t.id === player.teamId);
                   return (
                     <div
                       key={player.id}
@@ -112,8 +112,8 @@ export default function Verifications() {
 
                           <div className="space-y-2 mb-4">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-700">Match:</span>
-                              <span className="text-sm text-gray-600">{match.title}</span>
+                              <span className="text-sm font-semibold text-gray-700">Game:</span>
+                              <span className="text-sm text-gray-600">{game.title}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-gray-700">Team:</span>
@@ -121,7 +121,7 @@ export default function Verifications() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-gray-700">Date:</span>
-                              <span className="text-sm text-gray-600">{formatDate(match.dateTime)}</span>
+                              <span className="text-sm text-gray-600">{formatDate(game.dateTime)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-gray-700">Registered:</span>
@@ -133,14 +133,14 @@ export default function Verifications() {
 
                           <div className="flex gap-3">
                             <button
-                              onClick={() => handleApprove(match.id, player.id)}
+                              onClick={() => handleApprove(game.id, player.id)}
                               className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                             >
                               <CheckCircle className="w-5 h-5" />
                               Approve
                             </button>
                             <button
-                              onClick={() => handleReject(match.id, player.id)}
+                              onClick={() => handleReject(game.id, player.id)}
                               className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                             >
                               <XCircle className="w-5 h-5" />

@@ -1,23 +1,25 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Match, Player, RoundRobinMatch } from '../types';
+import { Game, Player, Match, Scorer } from '../types';
 
 interface DataContextType {
-  matches: Match[];
-  addMatch: (match: Omit<Match, 'id'>) => void;
-  updateMatch: (id: string, match: Partial<Match>) => void;
-  getMatch: (id: string) => Match | undefined;
-  registerPlayer: (matchId: string, teamId: string, player: Omit<Player, 'id' | 'status' | 'registeredAt'>) => { success: boolean; error?: string };
-  updatePlayerStatus: (matchId: string, playerId: string, status: 'confirmed' | 'rejected') => void;
-  getPendingRegistrations: () => Array<{ match: Match; player: Player }>;
-  addGalleryLink: (matchId: string, link: string) => void;
-  generateRoundRobinMatches: (matchId: string) => void;
+  games: Game[];
+  addGame: (game: Omit<Game, 'id'>) => void;
+  updateGame: (id: string, game: Partial<Game>) => void;
+  getGame: (id: string) => Game | undefined;
+  registerPlayer: (gameId: string, teamId: string, player: Omit<Player, 'id' | 'status' | 'registeredAt'>) => { success: boolean; error?: string };
+  updatePlayerStatus: (gameId: string, playerId: string, status: 'confirmed' | 'rejected') => void;
+  getPendingRegistrations: () => Array<{ game: Game; player: Player }>;
+  addGalleryLink: (gameId: string, link: string) => void;
+  removeGalleryLink: (gameId: string, linkIndex: number) => void;
+  generateMatches: (gameId: string) => void;
+  updateMatchResult: (gameId: string, matchId: string, scoreA: number, scoreB: number, scorersA: Scorer[], scorersB: Scorer[]) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'medy_matches_data';
+const STORAGE_KEY = 'medy_games_data';
 
-const seedData: Match[] = [
+const seedData: Game[] = [
   {
     id: '1',
     title: 'Koci Soccer Field',
@@ -85,61 +87,61 @@ const seedData: Match[] = [
 ];
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setMatches(JSON.parse(stored));
+      setGames(JSON.parse(stored));
     } else {
-      setMatches(seedData);
+      setGames(seedData);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seedData));
     }
   }, []);
 
-  const saveMatches = (newMatches: Match[]) => {
-    setMatches(newMatches);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newMatches));
+  const saveGames = (newGames: Game[]) => {
+    setGames(newGames);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newGames));
   };
 
-  const addMatch = (match: Omit<Match, 'id'>) => {
-    const newMatch: Match = {
-      ...match,
+  const addGame = (game: Omit<Game, 'id'>) => {
+    const newGame: Game = {
+      ...game,
       id: Date.now().toString(),
     };
-    saveMatches([...matches, newMatch]);
+    saveGames([...games, newGame]);
   };
 
-  const updateMatch = (id: string, matchUpdate: Partial<Match>) => {
-    const updated = matches.map(m => m.id === id ? { ...m, ...matchUpdate } : m);
-    saveMatches(updated);
+  const updateGame = (id: string, gameUpdate: Partial<Game>) => {
+    const updated = games.map(g => g.id === id ? { ...g, ...gameUpdate } : g);
+    saveGames(updated);
   };
 
-  const getMatch = (id: string) => {
-    return matches.find(m => m.id === id);
+  const getGame = (id: string) => {
+    return games.find(g => g.id === id);
   };
 
   const registerPlayer = (
-    matchId: string,
+    gameId: string,
     teamId: string,
     playerData: Omit<Player, 'id' | 'status' | 'registeredAt'>
   ): { success: boolean; error?: string } => {
-    const match = matches.find(m => m.id === matchId);
-    if (!match) return { success: false, error: 'Match not found' };
+    const game = games.find(g => g.id === gameId);
+    if (!game) return { success: false, error: 'Game not found' };
 
-    const team = match.teams.find(t => t.id === teamId);
+    const team = game.teams.find(t => t.id === teamId);
     if (!team) return { success: false, error: 'Team not found' };
 
-    if (team.players.filter(p => p.status !== 'rejected').length >= match.maxPlayersPerTeam) {
+    if (team.players.filter(p => p.status !== 'rejected').length >= game.maxPlayersPerTeam) {
       return { success: false, error: 'Team is full' };
     }
 
-    const existingPlayer = match.teams
+    const existingPlayer = game.teams
       .flatMap(t => t.players)
       .find(p => p.contact === playerData.contact && p.status !== 'rejected');
 
     if (existingPlayer) {
-      return { success: false, error: 'You have already registered for this match' };
+      return { success: false, error: 'You have already registered for this game' };
     }
 
     const newPlayer: Player = {
@@ -149,11 +151,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       registeredAt: new Date().toISOString(),
     };
 
-    const updatedMatches = matches.map(m => {
-      if (m.id === matchId) {
+    const updatedGames = games.map(g => {
+      if (g.id === gameId) {
         return {
-          ...m,
-          teams: m.teams.map(t => {
+          ...g,
+          teams: g.teams.map(t => {
             if (t.id === teamId) {
               return { ...t, players: [...t.players, newPlayer] };
             }
@@ -161,19 +163,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }),
         };
       }
-      return m;
+      return g;
     });
 
-    saveMatches(updatedMatches);
+    saveGames(updatedGames);
     return { success: true };
   };
 
-  const updatePlayerStatus = (matchId: string, playerId: string, status: 'confirmed' | 'rejected') => {
-    const updatedMatches = matches.map(m => {
-      if (m.id === matchId) {
+  const updatePlayerStatus = (gameId: string, playerId: string, status: 'confirmed' | 'rejected') => {
+    const updatedGames = games.map(g => {
+      if (g.id === gameId) {
         return {
-          ...m,
-          teams: m.teams.map(t => ({
+          ...g,
+          teams: g.teams.map(t => ({
             ...t,
             players: t.players.map(p =>
               p.id === playerId ? { ...p, status } : p
@@ -181,18 +183,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           })),
         };
       }
-      return m;
+      return g;
     });
-    saveMatches(updatedMatches);
+    saveGames(updatedGames);
   };
 
   const getPendingRegistrations = () => {
-    const pending: Array<{ match: Match; player: Player }> = [];
-    matches.forEach(match => {
-      match.teams.forEach(team => {
+    const pending: Array<{ game: Game; player: Player }> = [];
+    games.forEach(game => {
+      game.teams.forEach(team => {
         team.players.forEach(player => {
           if (player.status === 'pending') {
-            pending.push({ match, player });
+            pending.push({ game, player });
           }
         });
       });
@@ -200,32 +202,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return pending;
   };
 
-  const addGalleryLink = (matchId: string, link: string) => {
-    const updatedMatches = matches.map(m => {
-      if (m.id === matchId) {
-        return { ...m, galleryLinks: [...m.galleryLinks, link] };
+  const addGalleryLink = (gameId: string, link: string) => {
+    const updatedGames = games.map(g => {
+      if (g.id === gameId) {
+        return { ...g, galleryLinks: [...g.galleryLinks, link] };
       }
-      return m;
+      return g;
     });
-    saveMatches(updatedMatches);
+    saveGames(updatedGames);
   };
 
-  const generateRoundRobinMatches = (matchId: string) => {
-    const match = matches.find(m => m.id === matchId);
-    if (!match || match.teams.length < 2) {
+  const removeGalleryLink = (gameId: string, linkIndex: number) => {
+    const updatedGames = games.map(g => {
+      if (g.id === gameId) {
+        return { ...g, galleryLinks: g.galleryLinks.filter((_, i) => i !== linkIndex) };
+      }
+      return g;
+    });
+    saveGames(updatedGames);
+  };
+
+  const generateMatches = (gameId: string) => {
+    const game = games.find(g => g.id === gameId);
+    if (!game || game.teams.length < 2) {
       return;
     }
 
-    const roundRobinMatches: RoundRobinMatch[] = [];
-    const teams = match.teams;
+    const generatedMatches: Match[] = [];
+    const teams = game.teams;
     const baseTimestamp = Date.now();
     let matchCounter = 0;
 
     // Generate all possible pairings (round-robin)
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
-        roundRobinMatches.push({
-          id: `rr-${baseTimestamp}-${matchCounter++}`,
+        generatedMatches.push({
+          id: `match-${baseTimestamp}-${matchCounter++}`,
           teamAId: teams[i].id,
           teamAName: teams[i].name,
           teamBId: teams[j].id,
@@ -235,32 +247,65 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     // Shuffle the matches randomly
-    for (let i = roundRobinMatches.length - 1; i > 0; i--) {
+    for (let i = generatedMatches.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [roundRobinMatches[i], roundRobinMatches[j]] = [roundRobinMatches[j], roundRobinMatches[i]];
+      [generatedMatches[i], generatedMatches[j]] = [generatedMatches[j], generatedMatches[i]];
     }
 
-    const updatedMatches = matches.map(m => {
-      if (m.id === matchId) {
-        return { ...m, roundRobinMatches };
+    const updatedGames = games.map(g => {
+      if (g.id === gameId) {
+        return { ...g, matches: generatedMatches };
       }
-      return m;
+      return g;
     });
-    saveMatches(updatedMatches);
+    saveGames(updatedGames);
+  };
+
+  const updateMatchResult = (
+    gameId: string,
+    matchId: string,
+    scoreA: number,
+    scoreB: number,
+    scorersA: Scorer[],
+    scorersB: Scorer[]
+  ) => {
+    const updatedGames = games.map(g => {
+      if (g.id === gameId && g.matches) {
+        return {
+          ...g,
+          matches: g.matches.map(m => {
+            if (m.id === matchId) {
+              return {
+                ...m,
+                scoreA,
+                scoreB,
+                scorersA,
+                scorersB,
+              };
+            }
+            return m;
+          }),
+        };
+      }
+      return g;
+    });
+    saveGames(updatedGames);
   };
 
   return (
     <DataContext.Provider
       value={{
-        matches,
-        addMatch,
-        updateMatch,
-        getMatch,
+        games,
+        addGame,
+        updateGame,
+        getGame,
         registerPlayer,
         updatePlayerStatus,
         getPendingRegistrations,
         addGalleryLink,
-        generateRoundRobinMatches,
+        removeGalleryLink,
+        generateMatches,
+        updateMatchResult,
       }}
     >
       {children}

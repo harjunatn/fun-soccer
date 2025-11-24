@@ -7,10 +7,10 @@ import { ArrowLeft, Plus, Link as LinkIcon, Trash2 } from 'lucide-react';
 export default function MediaEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getMatch, addGalleryLink } = useData();
+  const { getGame, addGalleryLink, removeGalleryLink } = useData();
   const { isAdmin } = useAuth();
 
-  const match = getMatch(id || '');
+  const game = getGame(id || '');
   const [newLink, setNewLink] = useState('');
   const [error, setError] = useState('');
 
@@ -20,11 +20,11 @@ export default function MediaEditor() {
     }
   }, [isAdmin, navigate]);
 
-  if (!match) {
+  if (!game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Match not found</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Game not found</h2>
           <button
             onClick={() => navigate('/admin/dashboard')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
@@ -42,7 +42,7 @@ export default function MediaEditor() {
 
     try {
       new URL(newLink);
-      addGalleryLink(match.id, newLink);
+      addGalleryLink(game.id, newLink);
       setNewLink('');
     } catch {
       setError('Please enter a valid URL');
@@ -62,8 +62,8 @@ export default function MediaEditor() {
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-2">Match Media Gallery</h1>
-            <p className="text-blue-100">{match.title}</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Game Media Gallery</h1>
+            <p className="text-blue-100">{game.title}</p>
           </div>
 
           <div className="p-8">
@@ -95,10 +95,10 @@ export default function MediaEditor() {
 
             <div>
               <h2 className="text-xl font-bold text-gray-800 mb-4">
-                Current Media Links ({match.galleryLinks.length})
+                Current Media Links ({game.galleryLinks.length})
               </h2>
 
-              {match.galleryLinks.length === 0 ? (
+              {game.galleryLinks.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <LinkIcon className="w-12 h-12 mx-auto text-gray-400 mb-3" />
                   <p className="text-gray-600">No media links added yet</p>
@@ -106,7 +106,7 @@ export default function MediaEditor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {match.galleryLinks.map((link, idx) => (
+                  {game.galleryLinks.map((link, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -123,10 +123,7 @@ export default function MediaEditor() {
                         </a>
                       </div>
                       <button
-                        onClick={() => {
-                          const updatedLinks = match.galleryLinks.filter((_, i) => i !== idx);
-                          addGalleryLink(match.id, '');
-                        }}
+                        onClick={() => removeGalleryLink(game.id, idx)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                         title="Remove link"
                       >
@@ -140,10 +137,10 @@ export default function MediaEditor() {
 
             <div className="mt-8 pt-8 border-t border-gray-200">
               <button
-                onClick={() => navigate(`/match/${match.id}`)}
+                onClick={() => navigate(`/match/${game.id}`)}
                 className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
               >
-                View Match Page
+                View Game Page
               </button>
             </div>
           </div>

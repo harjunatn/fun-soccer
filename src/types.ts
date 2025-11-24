@@ -18,15 +18,25 @@ export interface Team {
   players: Player[];
 }
 
-export interface RoundRobinMatch {
+export interface Scorer {
+  playerId: string;
+  playerName: string;
+  goals: number;
+}
+
+export interface Match {
   id: string;
   teamAId: string;
   teamAName: string;
   teamBId: string;
   teamBName: string;
+  scoreA?: number;
+  scoreB?: number;
+  scorersA?: Scorer[];
+  scorersB?: Scorer[];
 }
 
-export interface Match {
+export interface Game {
   id: string;
   title: string;
   dateTime: string;
@@ -39,7 +49,7 @@ export interface Match {
   teams: Team[];
   status: 'upcoming' | 'completed';
   galleryLinks: string[];
-  roundRobinMatches?: RoundRobinMatch[];
+  matches?: Match[];
 }
 
 export interface User {
