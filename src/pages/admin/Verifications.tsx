@@ -1,0 +1,162 @@
+import { useNavigate } from 'react-router-dom';
+import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { ArrowLeft, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
+import { useEffect } from 'react';
+
+export default function Verifications() {
+  const navigate = useNavigate();
+  const { getPendingRegistrations, updatePlayerStatus } = useData();
+  const { isAdmin } = useAuth();
+
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/login');
+    }
+  }, [isAdmin, navigate]);
+
+  const pendingRegistrations = getPendingRegistrations();
+
+  const handleApprove = (matchId: string, playerId: string) => {
+    updatePlayerStatus(matchId, playerId, 'confirmed');
+  };
+
+  const handleReject = (matchId: string, playerId: string) => {
+    updatePlayerStatus(matchId, playerId, 'rejected');
+  };
+
+  const formatDate = (dateTime: string) => {
+    const date = new Date(dateTime);
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <button
+          onClick={() => navigate('/admin/dashboard')}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Dashboard
+        </button>
+
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 px-8 py-6">
+            <h1 className="text-3xl font-bold text-gray-900">Pending Verifications</h1>
+            <p className="text-gray-800 mt-1">
+              {pendingRegistrations.length} registration{pendingRegistrations.length !== 1 ? 's' : ''} awaiting approval
+            </p>
+          </div>
+
+          <div className="p-8">
+            {pendingRegistrations.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
+                <p className="text-xl font-semibold text-gray-800 mb-2">All caught up!</p>
+                <p className="text-gray-600">No pending registrations to verify</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {pendingRegistrations.map(({ match, player }) => {
+                  const team = match.teams.find(t => t.id === player.teamId);
+                  return (
+                    <div
+                      key={player.id}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex-shrink-0">
+                          {player.proofFile.type.startsWith('image/') ? (
+                            <div className="w-48 h-48 rounded-lg overflow-hidden bg-gray-100">
+                              <img
+                                src={player.proofFile.url}
+                                alt="Payment proof"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-48 h-48 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <div className="text-center">
+                                <FileText className="w-12 h-12 mx-auto text-red-500 mb-2" />
+                                <p className="text-sm text-gray-600">PDF File</p>
+                              </div>
+                            </div>
+                          )}
+                          <a
+                            href={player.proofFile.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1"
+                          >
+                            {player.proofFile.type.startsWith('image/') ? (
+                              <ImageIcon className="w-4 h-4" />
+                            ) : (
+                              <FileText className="w-4 h-4" />
+                            )}
+                            View Full File
+                          </a>
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="mb-4">
+                            <h3 className="text-xl font-bold text-gray-800 mb-1">{player.name}</h3>
+                            <p className="text-gray-600">{player.contact}</p>
+                          </div>
+
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-700">Match:</span>
+                              <span className="text-sm text-gray-600">{match.title}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-700">Team:</span>
+                              <span className="text-sm text-gray-600">{team?.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-700">Date:</span>
+                              <span className="text-sm text-gray-600">{formatDate(match.dateTime)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-700">Registered:</span>
+                              <span className="text-sm text-gray-600">
+                                {formatDate(player.registeredAt)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => handleApprove(match.id, player.id)}
+                              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <CheckCircle className="w-5 h-5" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(match.id, player.id)}
+                              className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <XCircle className="w-5 h-5" />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
