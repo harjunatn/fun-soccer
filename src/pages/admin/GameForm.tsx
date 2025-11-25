@@ -8,7 +8,7 @@ export default function GameForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addGame, updateGame, getGame } = useData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   const isEdit = !!id;
   const existingGame = isEdit ? getGame(id) : null;
@@ -27,10 +27,18 @@ export default function GameForm() {
   });
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!authLoading && !isAdmin) {
       navigate('/login');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (existingGame) {
@@ -49,34 +57,46 @@ export default function GameForm() {
     }
   }, [existingGame]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    const gameData = {
-      title: formData.title,
-      dateTime: formData.dateTime,
-      fieldName: formData.fieldName,
-      address: formData.address,
-      mapsLink: formData.mapsLink,
-      description: formData.description,
-      pricePerPlayer: formData.pricePerPlayer,
-      maxPlayersPerTeam: formData.maxPlayersPerTeam,
-      status: formData.status,
-      galleryLinks: existingGame?.galleryLinks || [],
-      teams: formData.teamNames.map((name, idx) => ({
-        id: existingGame?.teams[idx]?.id || `team-${idx + 1}`,
-        name,
-        players: existingGame?.teams[idx]?.players || [],
-      })),
-    };
+    try {
+      const gameData = {
+        title: formData.title,
+        dateTime: formData.dateTime,
+        fieldName: formData.fieldName,
+        address: formData.address,
+        mapsLink: formData.mapsLink,
+        description: formData.description,
+        pricePerPlayer: formData.pricePerPlayer,
+        maxPlayersPerTeam: formData.maxPlayersPerTeam,
+        status: formData.status,
+        galleryLinks: existingGame?.galleryLinks || [],
+        teams: formData.teamNames.map((name, idx) => ({
+          id: existingGame?.teams[idx]?.id || `team-${idx + 1}`,
+          name,
+          players: existingGame?.teams[idx]?.players || [],
+        })),
+      };
 
-    if (isEdit && existingGame) {
-      updateGame(existingGame.id, gameData);
-    } else {
-      addGame(gameData);
+      if (isEdit && existingGame) {
+        await updateGame(existingGame.id, gameData);
+      } else {
+        await addGame(gameData);
+      }
+
+      navigate('/admin/dashboard');
+    } catch (error) {
+      setSubmitError('Failed to save game. Please try again.');
+      console.error('Error saving game:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    navigate('/admin/dashboard');
   };
 
   const handleTeamNameChange = (index: number, value: string) => {
@@ -100,6 +120,12 @@ export default function GameForm() {
           <h1 className="text-3xl font-bold text-gray-800 mb-8">
             {isEdit ? 'Edit Game' : 'Create New Game'}
           </h1>
+
+          {submitError && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {submitError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -261,10 +287,11 @@ export default function GameForm() {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
-                {isEdit ? 'Update Game' : 'Create Game'}
+                {isSubmitting ? 'Saving...' : (isEdit ? 'Update Game' : 'Create Game')}
               </button>
             </div>
           </form>

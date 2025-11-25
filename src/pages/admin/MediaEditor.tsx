@@ -8,17 +8,26 @@ export default function MediaEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getGame, addGalleryLink, removeGalleryLink } = useData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   const game = getGame(id || '');
   const [newLink, setNewLink] = useState('');
   const [error, setError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!authLoading && !isAdmin) {
       navigate('/login');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   if (!game) {
     return (
@@ -36,16 +45,23 @@ export default function MediaEditor() {
     );
   }
 
-  const handleAddLink = (e: React.FormEvent) => {
+  const handleAddLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
       new URL(newLink);
-      addGalleryLink(game.id, newLink);
+      setIsAdding(true);
+      await addGalleryLink(game.id, newLink);
       setNewLink('');
-    } catch {
-      setError('Please enter a valid URL');
+    } catch (err) {
+      if (err instanceof TypeError) {
+        setError('Please enter a valid URL');
+      } else {
+        setError('Failed to add link. Please try again.');
+      }
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -85,10 +101,11 @@ export default function MediaEditor() {
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  disabled={isAdding}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-5 h-5" />
-                  Add Link
+                  {isAdding ? 'Adding...' : 'Add Link'}
                 </button>
               </form>
             </div>
@@ -123,7 +140,13 @@ export default function MediaEditor() {
                         </a>
                       </div>
                       <button
-                        onClick={() => removeGalleryLink(game.id, idx)}
+                        onClick={async () => {
+                          try {
+                            await removeGalleryLink(game.id, idx);
+                          } catch {
+                            setError('Failed to remove link. Please try again.');
+                          }
+                        }}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                         title="Remove link"
                       >

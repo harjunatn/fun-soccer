@@ -7,18 +7,29 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const success = login(email, password);
-    if (success) {
-      navigate('/admin/dashboard');
-    } else {
-      setError('Invalid email or password');
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        // Wait a bit to ensure all state updates are complete
+        await new Promise(resolve => setTimeout(resolve, 800));
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        setError(result.error || 'Invalid email or password');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -71,9 +82,10 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

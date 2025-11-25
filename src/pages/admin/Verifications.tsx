@@ -2,27 +2,61 @@ import { useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Verifications() {
   const navigate = useNavigate();
   const { getPendingRegistrations, updatePlayerStatus } = useData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!authLoading && !isAdmin) {
       navigate('/login');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   const pendingRegistrations = getPendingRegistrations();
 
-  const handleApprove = (matchId: string, playerId: string) => {
-    updatePlayerStatus(matchId, playerId, 'confirmed');
+  const [updatingPlayers, setUpdatingPlayers] = useState<Set<string>>(new Set());
+
+  const handleApprove = async (gameId: string, playerId: string) => {
+    setUpdatingPlayers(prev => new Set(prev).add(playerId));
+    try {
+      await updatePlayerStatus(gameId, playerId, 'confirmed');
+    } catch (error) {
+      console.error('Error approving player:', error);
+      alert('Failed to approve player. Please try again.');
+    } finally {
+      setUpdatingPlayers(prev => {
+        const next = new Set(prev);
+        next.delete(playerId);
+        return next;
+      });
+    }
   };
 
-  const handleReject = (matchId: string, playerId: string) => {
-    updatePlayerStatus(matchId, playerId, 'rejected');
+  const handleReject = async (gameId: string, playerId: string) => {
+    setUpdatingPlayers(prev => new Set(prev).add(playerId));
+    try {
+      await updatePlayerStatus(gameId, playerId, 'rejected');
+    } catch (error) {
+      console.error('Error rejecting player:', error);
+      alert('Failed to reject player. Please try again.');
+    } finally {
+      setUpdatingPlayers(prev => {
+        const next = new Set(prev);
+        next.delete(playerId);
+        return next;
+      });
+    }
   };
 
   const formatDate = (dateTime: string) => {
@@ -134,17 +168,19 @@ export default function Verifications() {
                           <div className="flex gap-3">
                             <button
                               onClick={() => handleApprove(game.id, player.id)}
-                              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                              disabled={updatingPlayers.has(player.id)}
+                              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <CheckCircle className="w-5 h-5" />
-                              Approve
+                              {updatingPlayers.has(player.id) ? 'Updating...' : 'Approve'}
                             </button>
                             <button
                               onClick={() => handleReject(game.id, player.id)}
-                              className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                              disabled={updatingPlayers.has(player.id)}
+                              className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <XCircle className="w-5 h-5" />
-                              Reject
+                              {updatingPlayers.has(player.id) ? 'Updating...' : 'Reject'}
                             </button>
                           </div>
                         </div>

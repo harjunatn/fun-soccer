@@ -23,3 +23,7 @@ dist-ssr
 .env
 .bolt
 .bolt/*
+
+# Supabase SQL files and setup documentation
+*.sql
+SUPABASE_AUTH_SETUP.md

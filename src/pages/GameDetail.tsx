@@ -16,6 +16,7 @@ export default function GameDetail() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isGeneratingMatches, setIsGeneratingMatches] = useState(false);
 
   if (!game) {
     return (
@@ -52,21 +53,27 @@ export default function GameDetail() {
     setSuccessMessage('');
   };
 
-  const handleRegistration = (data: { name: string; contact: string; proofFile: { name: string; type: string; url: string } }) => {
-    const result = registerPlayer(game.id, selectedTeamId, {
-      name: data.name,
-      contact: data.contact,
-      proofFile: data.proofFile,
-      teamId: selectedTeamId,
-    });
+  const handleRegistration = async (data: { name: string; contact: string; proofFile: { name: string; type: string; url: string } }) => {
+    try {
+      const result = await registerPlayer(game.id, selectedTeamId, {
+        name: data.name,
+        contact: data.contact,
+        proofFile: data.proofFile,
+        teamId: selectedTeamId,
+      });
 
-    setIsModalOpen(false);
+      setIsModalOpen(false);
 
-    if (result.success) {
-      setSuccessMessage('Registration submitted successfully! Please wait for admin verification.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setErrorMessage(result.error || 'Registration failed');
+      if (result.success) {
+        setSuccessMessage('Registration submitted successfully! Please wait for admin verification.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setErrorMessage(result.error || 'Registration failed');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {
+      setIsModalOpen(false);
+      setErrorMessage('Registration failed. Please try again.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -176,11 +183,24 @@ export default function GameDetail() {
                 </div>
                 {isAdmin && game.teams.length >= 2 && (
                   <button
-                    onClick={() => generateMatches(game.id)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    onClick={async () => {
+                      try {
+                        setIsGeneratingMatches(true);
+                        await generateMatches(game.id);
+                        setSuccessMessage('Matches generated successfully!');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } catch {
+                        setErrorMessage('Failed to generate matches. Please try again.');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } finally {
+                        setIsGeneratingMatches(false);
+                      }
+                    }}
+                    disabled={isGeneratingMatches}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Play className="w-5 h-5" />
-                    Start the Game
+                    {isGeneratingMatches ? 'Generating...' : 'Start the Game'}
                   </button>
                 )}
               </div>

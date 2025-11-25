@@ -9,7 +9,7 @@ export default function MatchResultEditor() {
   const { gameId, matchId } = useParams();
   const navigate = useNavigate();
   const { getGame, updateMatchResult } = useData();
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   const game = getGame(gameId || '');
   const match = game?.matches?.find(m => m.id === matchId);
@@ -18,12 +18,22 @@ export default function MatchResultEditor() {
   const [scoreB, setScoreB] = useState<number>(match?.scoreB || 0);
   const [scorersA, setScorersA] = useState<Scorer[]>(match?.scorersA || []);
   const [scorersB, setScorersB] = useState<Scorer[]>(match?.scorersB || []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!authLoading && !isAdmin) {
       navigate('/login');
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (match) {
@@ -91,10 +101,20 @@ export default function MatchResultEditor() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateMatchResult(game.id, match.id, scoreA, scoreB, scorersA, scorersB);
-    navigate(`/game/${gameId}/match/${matchId}`);
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      await updateMatchResult(game.id, match.id, scoreA, scoreB, scorersA, scorersB);
+      navigate(`/game/${gameId}/match/${matchId}`);
+    } catch (error) {
+      setSubmitError('Failed to save match result. Please try again.');
+      console.error('Error saving match result:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -118,6 +138,12 @@ export default function MatchResultEditor() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-8">
+            {submitError && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {submitError}
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               {/* Team A */}
               <div className="space-y-6">
@@ -274,10 +300,11 @@ export default function MatchResultEditor() {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
-                Save Result
+                {isSubmitting ? 'Saving...' : 'Save Result'}
               </button>
             </div>
           </form>

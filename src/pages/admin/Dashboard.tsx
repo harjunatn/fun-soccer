@@ -7,13 +7,58 @@ import { useEffect } from 'react';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { games, getPendingRegistrations } = useData();
-  const { isAdmin, logout } = useAuth();
+  const { isAdmin, logout, loading: authLoading, session } = useAuth();
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate('/login');
+    // Wait for auth to finish loading
+    if (authLoading) return;
+    
+    // Redirect to login if not authenticated
+    if (!session) {
+      navigate('/login', { replace: true });
     }
-  }, [isAdmin, navigate]);
+  }, [authLoading, session, navigate]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show message if logged in but not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
+          <p className="text-gray-600 mb-6">
+            You are logged in, but you don't have admin privileges.
+            <br />
+            Please contact an administrator to grant you access.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+            >
+              Go to Home
+            </button>
+            <button
+              onClick={async () => {
+                await logout();
+                navigate('/login');
+              }}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const upcomingGames = games.filter(g => g.status === 'upcoming');
   const completedGames = games.filter(g => g.status === 'completed');
@@ -53,8 +98,8 @@ export default function Dashboard() {
                 View Site
               </button>
               <button
-                onClick={() => {
-                  logout();
+                onClick={async () => {
+                  await logout();
                   navigate('/');
                 }}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"

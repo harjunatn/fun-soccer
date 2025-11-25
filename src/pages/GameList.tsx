@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, Users, LogIn, LogOut } from 'lucide-react';
 
 export default function GameList() {
-  const { games } = useData();
+  const { games, loading } = useData();
   const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -39,7 +39,7 @@ export default function GameList() {
                     Dashboard
                   </button>
                   <button
-                    onClick={logout}
+                    onClick={() => logout()}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
                     <LogOut className="w-4 h-4" />
@@ -66,66 +66,74 @@ export default function GameList() {
           <p className="text-gray-600 mt-1">Choose your team and join the fun!</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map(game => (
-            <div
-              key={game.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-              onClick={() => navigate(`/match/${game.id}`)}
-            >
-              <div className={`h-2 ${game.status === 'upcoming' ? 'bg-blue-600' : 'bg-gray-400'}`} />
-
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800">{game.title}</h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    game.status === 'upcoming'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {game.status === 'upcoming' ? 'Upcoming' : 'Completed'}
-                  </span>
-                </div>
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="w-4 h-4 mr-2 text-blue-600" />
-                    <span className="text-sm">{formatDate(game.dateTime)}</span>
-                  </div>
-
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-                    <span className="text-sm">{game.fieldName}</span>
-                  </div>
-
-                  <div className="flex items-center text-gray-600">
-                    <Users className="w-4 h-4 mr-2 text-blue-600" />
-                    <span className="text-sm">{game.teams.length} teams</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Price per player</p>
-                      <p className="text-lg font-bold text-blue-600">
-                        Rp {game.pricePerPlayer.toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                    <button className="px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-semibold hover:bg-yellow-500 transition-colors">
-                      Join Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {games.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No games available at the moment</p>
+            <p className="text-gray-500 text-lg">Loading games...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {games.map(game => (
+                <div
+                  key={game.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/match/${game.id}`)}
+                >
+                  <div className={`h-2 ${game.status === 'upcoming' ? 'bg-blue-600' : 'bg-gray-400'}`} />
+
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-800">{game.title}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        game.status === 'upcoming'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {game.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-sm">{formatDate(game.dateTime)}</span>
+                      </div>
+
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-sm">{game.fieldName}</span>
+                      </div>
+
+                      <div className="flex items-center text-gray-600">
+                        <Users className="w-4 h-4 mr-2 text-blue-600" />
+                        <span className="text-sm">{game.teams.length} teams</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Price per player</p>
+                          <p className="text-lg font-bold text-blue-600">
+                            Rp {game.pricePerPlayer.toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                        <button className="px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-semibold hover:bg-yellow-500 transition-colors">
+                          Join Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {games.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No games available at the moment</p>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
