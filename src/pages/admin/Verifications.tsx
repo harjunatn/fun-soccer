@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, CheckCircle, XCircle, FileText, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, FileText, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Verifications() {
   const navigate = useNavigate();
   const { getPendingRegistrations, updatePlayerStatus } = useData();
   const { isAdmin, loading: authLoading } = useAuth();
+  const [updatingPlayers, setUpdatingPlayers] = useState<Set<string>>(new Set());
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -24,8 +26,6 @@ export default function Verifications() {
   }
 
   const pendingRegistrations = getPendingRegistrations();
-
-  const [updatingPlayers, setUpdatingPlayers] = useState<Set<string>>(new Set());
 
   const handleApprove = async (gameId: string, playerId: string) => {
     setUpdatingPlayers(prev => new Set(prev).add(playerId));
@@ -109,11 +109,22 @@ export default function Verifications() {
                         <div className="flex-shrink-0">
                           {player.proofFile.type.startsWith('image/') ? (
                             <div className="w-48 h-48 rounded-lg overflow-hidden bg-gray-100">
-                              <img
-                                src={player.proofFile.url}
-                                alt="Payment proof"
-                                className="w-full h-full object-cover"
-                              />
+                              {imageErrors.has(player.id) ? (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div className="text-center">
+                                    <AlertCircle className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                                    <p className="text-xs text-gray-500">Image failed to load</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <img
+                                  src={player.proofFile.url}
+                                  alt="Payment proof"
+                                  className="w-full h-full object-cover"
+                                  onError={() => setImageErrors(prev => new Set(prev).add(player.id))}
+                                  loading="lazy"
+                                />
+                              )}
                             </div>
                           ) : (
                             <div className="w-48 h-48 rounded-lg bg-gray-100 flex items-center justify-center">

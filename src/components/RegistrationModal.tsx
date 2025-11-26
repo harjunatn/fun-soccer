@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Upload, FileText, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -56,14 +57,38 @@ export default function RegistrationModal({ isOpen, onClose, teamName, onSubmit 
 
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL for the uploaded file
+      const { data } = supabase.storage
+        .from('payment-proofs')
+        .getPublicUrl(filePath);
+      
+      const publicUrl = data.publicUrl;
+
       onSubmit({
         name,
         contact,
         proofFile: {
           name: file.name,
           type: file.type,
-          url: filePreview,
+          url: publicUrl,
         },
       });
 
@@ -71,8 +96,12 @@ export default function RegistrationModal({ isOpen, onClose, teamName, onSubmit 
       setContact('');
       setFile(null);
       setFilePreview('');
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError('Failed to upload file. Please try again.');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

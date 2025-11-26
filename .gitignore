@@ -27,3 +27,4 @@ dist-ssr
 # Supabase SQL files and setup documentation
 *.sql
 SUPABASE_AUTH_SETUP.md
+SUPABASE_STORAGE_SETUP.md
