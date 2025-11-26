@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -26,20 +26,24 @@ export default function GameForm() {
     teamNames: ['Team Merah', 'Team Biru', 'Team Kuning', 'Team Hijau'],
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const updateField = useCallback(
+    <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
+      setFormData(prev => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  // Redirect kalau bukan admin
   useEffect(() => {
     if (!authLoading && !isAdmin) {
       navigate('/login');
     }
   }, [isAdmin, authLoading, navigate]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
-  }
-
+  // Prefill form kalau edit mode
   useEffect(() => {
     if (existingGame) {
       setFormData({
@@ -57,8 +61,14 @@ export default function GameForm() {
     }
   }, [existingGame]);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  // ⬇️ early return aman di sini (setelah semua hooks)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,8 +102,8 @@ export default function GameForm() {
 
       navigate('/admin/dashboard');
     } catch (error) {
-      setSubmitError('Failed to save game. Please try again.');
       console.error('Error saving game:', error);
+      setSubmitError('Failed to save game. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +112,7 @@ export default function GameForm() {
   const handleTeamNameChange = (index: number, value: string) => {
     const newTeamNames = [...formData.teamNames];
     newTeamNames[index] = value;
-    setFormData({ ...formData, teamNames: newTeamNames });
+    updateField('teamNames', newTeamNames);
   };
 
   return (
@@ -135,7 +145,7 @@ export default function GameForm() {
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => updateField('title', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Weekend Soccer Match"
                 required
@@ -150,7 +160,7 @@ export default function GameForm() {
                 <input
                   type="datetime-local"
                   value={formData.dateTime}
-                  onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
+                  onChange={(e) => updateField('dateTime', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -163,7 +173,7 @@ export default function GameForm() {
                 <input
                   type="text"
                   value={formData.fieldName}
-                  onChange={(e) => setFormData({ ...formData, fieldName: e.target.value })}
+                  onChange={(e) => updateField('fieldName', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Lapangan Medy Central"
                   required
@@ -178,7 +188,7 @@ export default function GameForm() {
               <input
                 type="text"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => updateField('address', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Jl. Olahraga No. 15, Jakarta"
                 required
@@ -192,7 +202,7 @@ export default function GameForm() {
               <input
                 type="url"
                 value={formData.mapsLink}
-                onChange={(e) => setFormData({ ...formData, mapsLink: e.target.value })}
+                onChange={(e) => updateField('mapsLink', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://maps.google.com/..."
                 required
@@ -205,7 +215,7 @@ export default function GameForm() {
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => updateField('description', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={4}
                 placeholder="Describe the game..."
@@ -221,9 +231,9 @@ export default function GameForm() {
                 <input
                   type="number"
                   value={formData.pricePerPlayer}
-                  onChange={(e) => setFormData({ ...formData, pricePerPlayer: Number(e.target.value) })}
+                  onChange={(e) => updateField('pricePerPlayer', Number(e.target.value))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="0"
+                  min={0}
                   required
                 />
               </div>
@@ -235,9 +245,9 @@ export default function GameForm() {
                 <input
                   type="number"
                   value={formData.maxPlayersPerTeam}
-                  onChange={(e) => setFormData({ ...formData, maxPlayersPerTeam: Number(e.target.value) })}
+                  onChange={(e) => updateField('maxPlayersPerTeam', Number(e.target.value))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
+                  min={1}
                   required
                 />
               </div>
@@ -249,7 +259,9 @@ export default function GameForm() {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'upcoming' | 'completed' })}
+                onChange={(e) =>
+                  updateField('status', e.target.value as 'upcoming' | 'completed')
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
@@ -291,7 +303,7 @@ export default function GameForm() {
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
-                {isSubmitting ? 'Saving...' : (isEdit ? 'Update Game' : 'Create Game')}
+                {isSubmitting ? 'Saving...' : isEdit ? 'Update Game' : 'Create Game'}
               </button>
             </div>
           </form>
@@ -300,4 +312,3 @@ export default function GameForm() {
     </div>
   );
 }
-

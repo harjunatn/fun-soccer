@@ -27,14 +27,6 @@ export default function MatchResultEditor() {
     }
   }, [isAdmin, authLoading, navigate]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (match) {
       setScoreA(match.scoreA || 0);
@@ -43,6 +35,15 @@ export default function MatchResultEditor() {
       setScorersB(match.scorersB || []);
     }
   }, [match]);
+
+  // All hooks must be called before any early returns
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   if (!game || !match) {
     return (

@@ -28,7 +28,7 @@ export default function Login() {
         setIsLoading(false);
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
   };
