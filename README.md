@@ -12,7 +12,7 @@ An interactive React web application for managing soccer matches and player regi
 - View match galleries after completion
 
 ### For Administrators
-- Secure admin login (email: `admin@medy.local`, password: `Admin123!`)
+- Secure admin login
 - Create and edit matches
 - Configure 4 teams per match with customizable names
 - Set maximum players per team (default: 11)
