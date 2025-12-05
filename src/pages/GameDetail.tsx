@@ -8,7 +8,7 @@ import RegistrationModal from '../components/RegistrationModal';
 export default function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getGame, registerPlayer, generateMatches } = useData();
+  const { getGame, registerPlayer, generateMatches, loading } = useData();
   const { isAdmin } = useAuth();
   const game = getGame(id || '');
 
@@ -18,6 +18,18 @@ export default function GameDetail() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isGeneratingMatches, setIsGeneratingMatches] = useState(false);
 
+  // Show loading state while data is being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show "Game not found" after loading is complete
   if (!game) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">

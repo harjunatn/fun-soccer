@@ -140,14 +140,14 @@ export default function RegistrationModal({ isOpen, onClose, teamName, onSubmit 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contact (Phone/Email) *
+              Instagram Account *
             </label>
             <input
               type="text"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="08123456789 or email@example.com"
+              placeholder="@username"
               required
             />
           </div>

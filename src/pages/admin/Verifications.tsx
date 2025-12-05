@@ -7,15 +7,25 @@ import { useEffect, useState } from 'react';
 export default function Verifications() {
   const navigate = useNavigate();
   const { getPendingRegistrations, updatePlayerStatus } = useData();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, loading: authLoading, session } = useAuth();
   const [updatingPlayers, setUpdatingPlayers] = useState<Set<string>>(new Set());
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate('/login');
+    // Wait for auth to finish loading before making any redirect decisions
+    if (authLoading) return;
+    
+    // If no session, redirect immediately
+    if (!session) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, [isAdmin, authLoading, navigate]);
+    
+    // If there's a session but user is not admin, redirect
+    if (!isAdmin) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAdmin, authLoading, session, navigate]);
 
   if (authLoading) {
     return (

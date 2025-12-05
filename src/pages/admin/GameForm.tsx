@@ -8,7 +8,7 @@ export default function GameForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addGame, updateGame, getGame } = useData();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, loading: authLoading, session } = useAuth();
 
   const isEdit = !!id;
   const existingGame = isEdit ? getGame(id) : null;
@@ -38,10 +38,20 @@ export default function GameForm() {
 
   // Redirect kalau bukan admin
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate('/login');
+    // Wait for auth to finish loading before making any redirect decisions
+    if (authLoading) return;
+    
+    // If no session, redirect immediately
+    if (!session) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, [isAdmin, authLoading, navigate]);
+    
+    // If there's a session but user is not admin, redirect
+    if (!isAdmin) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAdmin, authLoading, session, navigate]);
 
   // Prefill form kalau edit mode
   useEffect(() => {

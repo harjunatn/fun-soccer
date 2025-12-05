@@ -8,7 +8,7 @@ export default function MediaEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getGame, addGalleryLink, removeGalleryLink } = useData();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, loading: authLoading, session } = useAuth();
 
   const game = getGame(id || '');
   const [newLink, setNewLink] = useState('');
@@ -16,10 +16,20 @@ export default function MediaEditor() {
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate('/login');
+    // Wait for auth to finish loading before making any redirect decisions
+    if (authLoading) return;
+    
+    // If no session, redirect immediately
+    if (!session) {
+      navigate('/login', { replace: true });
+      return;
     }
-  }, [isAdmin, authLoading, navigate]);
+    
+    // If there's a session but user is not admin, redirect
+    if (!isAdmin) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAdmin, authLoading, session, navigate]);
 
   if (authLoading) {
     return (

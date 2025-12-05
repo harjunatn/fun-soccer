@@ -7,17 +7,30 @@ import { useEffect } from 'react';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { games, getPendingRegistrations } = useData();
-  const { isAdmin, logout, loading: authLoading } = useAuth();
+  const { isAdmin, logout, loading: authLoading, session } = useAuth();
 
   useEffect(() => {
-    // Wait for auth to finish loading
+    // CRITICAL: Wait for auth check to complete before making any decisions
+    // Don't redirect while authLoading is true (admin check in progress)
     if (authLoading) return;
     
-    // Redirect if not admin (this covers both no session and non-admin users)
-    if (!isAdmin) {
+    // If no session, redirect immediately (user is not logged in)
+    if (!session) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    
+    // Now we know: session exists + loading complete + user object exists
+    // If user is not admin, redirect. If user is admin, allow access.
+    if (session && !isAdmin) {
       navigate('/login', { replace: true });
     }
-  }, [isAdmin, authLoading, navigate]);
+    // If session exists + user exists + isAdmin = true → allow access (do nothing)
+  }, [isAdmin, authLoading, session, navigate]);
+
+  console.log("session", session);
+  console.log("isAdmin", isAdmin);
 
   if (authLoading) {
     return (
